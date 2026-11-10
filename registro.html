@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Cliente | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen font-sans py-10 px-4">
+
+    <div class="bg-slate-800 p-8 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-700">
+        <div class="text-center mb-8">
+            <div class="text-3xl font-black text-blue-500 tracking-tighter mb-2 italic">NIVARA <span class="text-white font-light">CLEAN</span></div>
+            <p class="text-slate-400 text-sm font-bold uppercase">Alta de Nuevo Suministro</p>
+        </div>
+
+        <form id="registroForm" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Responsable</label>
+                    <input type="text" id="nombreRes" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="Nombre completo">
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Nombre del Hotel</label>
+                    <input type="text" id="nombreHotel" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="Nombre comercial">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Ciudad</label>
+                    <select id="ubicacion" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none appearance-none">
+                        <option value="Playa del Carmen">Playa del Carmen</option>
+                        <option value="Cancún">Cancún</option>
+                        <option value="Tulum">Tulum</option>
+                        <option value="Puerto Morelos">Puerto Morelos</option>
+                        <option value="Akumal">Akumal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Giro Comercial</label>
+                    <select id="giro" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none appearance-none">
+                        <option value="Hotel">Hotel</option>
+                        <option value="Restaurante">Restaurante</option>
+                        <option value="Lavandería Industrial">Lavandería Industrial</option>
+                        <option value="Hospital / Clínica">Hospital / Clínica</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Dirección Completa</label>
+                <input type="text" id="direccion" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="Calle, número y colonia">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Referencias</label>
+                    <input type="text" id="referencias" class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="Ej: Fachada azul">
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">WhatsApp</label>
+                    <input type="tel" id="telefono" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="9841234567">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700 pt-5">
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Email</label>
+                    <input type="email" id="email" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="admin@hotel.com">
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-xs font-bold mb-2 uppercase tracking-widest text-blue-400">Contraseña</label>
+                    <input type="password" id="password" required minlength="6" class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="******">
+                </div>
+            </div>
+
+            <button type="submit" id="btnRegistro" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 uppercase tracking-widest">
+                Crear Cuenta y Activar IA
+            </button>
+            <p id="errorMsg" class="text-red-500 text-xs text-center hidden font-bold mt-2"></p>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // CONFIGURACIÓN FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDez4Am3muTt-5xlJdU_BfaY__GJycJlAY",
+            authDomain: "nivara-clean.firebaseapp.com",
+            projectId: "nivara-clean",
+            storageBucket: "nivara-clean.firebasestorage.app",
+            messagingSenderId: "600289319525",
+            appId: "1:600289319525:web:35433c4a6afa99cd02048c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // LÓGICA DE REGISTRO
+        document.getElementById('registroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnRegistro');
+            const errorDisplay = document.getElementById('errorMsg');
+            
+            btn.innerText = "PROCESANDO...";
+            btn.disabled = true;
+            errorDisplay.classList.add('hidden');
+
+            const email = document.getElementById('email').value.toLowerCase();
+            const pass = document.getElementById('password').value;
+
+            try {
+                // 1. Crear usuario en Auth
+                await createUserWithEmailAndPassword(auth, email, pass);
+
+                // 2. Guardar datos en Firestore
+                await setDoc(doc(db, "clientes", email), {
+                    nombre_responsable: document.getElementById('nombreRes').value,
+                    nombre_hotel: document.getElementById('nombreHotel').value,
+                    ubicacion: document.getElementById('ubicacion').value,
+                    giro: document.getElementById('giro').value,
+                    direccion: document.getElementById('direccion').value,
+                    referencias: document.getElementById('referencias').value,
+                    telefono: document.getElementById('telefono').value,
+                    consumo_actual: 0,
+                    ahorro: "0%",
+                    estado_ia: "CALIBRANDO MOTOR",
+                    historial_detergente: [0, 0, 0, 0, 0, 0]
+                });
+
+                // 3. Redirigir al portal
+                window.location.href = "portal.html";
+
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = "REINTENTAR REGISTRO";
+                errorDisplay.innerText = "Error: " + err.message;
+                errorDisplay.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

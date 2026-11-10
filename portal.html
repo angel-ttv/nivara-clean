@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Cliente | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Esto hace que al darle clic al menú, la página baje con un efecto suave */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-blue-950 text-white flex flex-col hidden md:flex">
+        <div class="p-6 border-b border-blue-900">
+            <div class="text-2xl font-black tracking-tighter">NIVARA <span class="text-blue-500 font-light">CLEAN</span></div>
+            <p class="text-xs text-blue-300 mt-1">Portal de Suministro</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="admin.html" id="btnAdminAccess" class="hidden flex items-center gap-3 bg-red-600/20 hover:bg-red-600 p-3 rounded-lg text-red-400 hover:text-white transition border border-red-600/30">
+            <i class="fas fa-shield-halved w-5"></i> Centro de Comando
+            </a>
+            <a href="#" class="flex items-center gap-3 bg-blue-900 p-3 rounded-lg text-white font-medium">
+                <i class="fas fa-chart-pie w-5"></i> Analítica IA
+            </a>
+            <a href="cotizador.html" class="flex items-center gap-3 hover:bg-blue-900/50 p-3 rounded-lg text-blue-200 transition">
+                <i class="fas fa-box w-5"></i> Nuevo Pedido
+            </a>
+            <a href="#seccion-fichas" class="flex items-center gap-3 hover:bg-blue-900/50 p-3 rounded-lg text-blue-200 transition">
+                <i class="fas fa-file-pdf w-5"></i> Fichas MSDS
+            </a>
+        </nav>
+        <div class="p-4 border-t border-blue-900">
+            <a href="#" id="btnCerrarSesion" class="flex items-center gap-3 text-blue-400 hover:text-white transition text-sm cursor-pointer">
+                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-8">
+        
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Bienvenido, <span id="nombreHotelDisplay" class="text-blue-600">Cargando datos...</span></h1>
+                <p class="text-slate-500 text-sm">Estado del motor de predicción: <span class="text-green-500 font-bold"><i class="fas fa-circle text-[10px] animate-pulse"></i> <span id="estadoIADisplay">Conectando...</span></span></p>
+                <p class="text-slate-500 text-sm">
+                    <i class="fas fa-map-marker-alt text-red-500 mr-1"></i> <span id="ubicacionDisplay" class="mr-4">Cargando...</span>
+                    Estado del motor: <span class="text-green-500 font-bold"><span id="estadoIADisplay">...</span></span>
+                </p>
+            </div>
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition">
+                Autorizar Resurtido
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500">
+                <p class="text-slate-500 text-sm font-medium mb-1">Consumo Actual</p>
+                <h3 class="text-3xl font-black text-slate-800"><span id="consumoDisplay">--</span> <span class="text-lg text-slate-400 font-normal">Litros</span></h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-green-500">
+                <p class="text-slate-500 text-sm font-medium mb-1">Ahorro vs Mes Anterior (IA)</p>
+                <h3 class="text-3xl font-black text-green-600"><span id="ahorroDisplay">--</span> <i class="fas fa-arrow-down text-sm"></i></h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                <p class="text-slate-500 text-sm font-medium mb-1">Próximo Agotamiento Proyectado</p>
+                <h3 class="text-xl font-bold text-slate-800 mt-2">Nivara ZeroX: <span class="text-orange-500">En 4 días</span></h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Tendencia de Consumo vs Presupuesto</h2>
+            <div class="relative h-72 w-full">
+                <canvas id="graficaConsumo"></canvas>
+            </div>
+        </div>
+
+        <div id="seccion-fichas" class="mt-12 mb-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-2">Documentación y Certificaciones</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition">
+                            <i class="fas fa-file-pdf text-2xl"></i>
+                        </div>
+                        <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded uppercase tracking-wider">V 1.0</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg mb-1">Nivara ZeroX</h3>
+                    <p class="text-xs text-slate-500 mb-6">Ficha Técnica y Protocolo de Aplicación. Removedor de Óxido Ferroso.</p>
+                    
+                    <a href="Nivara_ZeroX_Ficha.pdf" download="Ficha_Tecnica_Nivara_ZeroX.pdf" class="block w-full text-center bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2 rounded-lg hover:bg-blue-600 hover:text-white hover:border-blue-600 transition text-sm">
+                        <i class="fas fa-download mr-1"></i> Descargar PDF
+                    </a>
+                </div>
+                
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 opacity-60">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-slate-200 text-slate-400 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-lock text-xl"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-slate-600 text-lg mb-1">Nivara Power Wash</h3>
+                    <p class="text-xs text-slate-500 mb-6">Documentación técnica en proceso de validación y registro.</p>
+                    
+                    <button disabled class="w-full bg-slate-200 text-slate-400 font-bold py-2 rounded-lg text-sm cursor-not-allowed">
+                        Próximamente
+                    </button>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 opacity-60">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-slate-200 text-slate-400 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-lock text-xl"></i>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-slate-600 text-lg mb-1">Nivara Soft Cloud</h3>
+                    <p class="text-xs text-slate-500 mb-6">Documentación técnica en proceso de validación y registro.</p>
+                    
+                    <button disabled class="w-full bg-slate-200 text-slate-400 font-bold py-2 rounded-lg text-sm cursor-not-allowed">
+                        Próximamente
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDez4Am3muTt-5xlJdU_BfaY__GJycJlAY",
+        authDomain: "nivara-clean.firebaseapp.com",
+        projectId: "nivara-clean",
+        storageBucket: "nivara-clean.firebasestorage.app",
+        messagingSenderId: "600289319525",
+        appId: "1:600289319525:web:35433c4a6afa99cd02048c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app); 
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docRef = doc(db, "clientes", user.email);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const datos = docSnap.data();
+
+                // --- LÓGICA DE ACCESO ADMIN ---
+                const btnAdmin = document.getElementById('btnAdminAccess');
+                if (datos.rol === "admin") {
+                    btnAdmin.classList.remove('hidden'); // Mostramos el botón si es admin
+                }
+
+                // --- ACTUALIZACIÓN DE INTERFAZ ---
+                document.getElementById('nombreHotelDisplay').innerText = datos.nombre_hotel || "Cliente";
+                document.getElementById('consumoDisplay').innerText = datos.consumo_actual || "0";
+                document.getElementById('ahorroDisplay').innerText = datos.ahorro || "0%";
+                document.getElementById('estadoIADisplay').innerText = datos.estado_ia || "ACTIVO";
+                
+                // Cargar Gráfica (Tu código de Chart.js se mantiene igual aquí...)
+                renderGrafica(datos);
+
+            }
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    // Función separada para la gráfica para mantener orden
+    function renderGrafica(datos) {
+        const histDetergente = datos.historial_detergente || [0, 0, 0, 0, 0, 0];
+        const histSuavizante = datos.historial_suavizante || [0, 0, 0, 0, 0, 0];
+        const histBlanqueador = datos.historial_blanqueador || [0, 0, 0, 0, 0, 0];
+        
+        let graficaExistente = Chart.getChart("graficaConsumo");
+        if (graficaExistente) graficaExistente.destroy();
+
+        const ctx = document.getElementById('graficaConsumo').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar'],
+                datasets: [
+                    { label: 'Nivara ZeroX', data: histDetergente, borderColor: '#2563eb', tension: 0.4 },
+                    { label: 'Power Wash', data: histSuavizante, borderColor: '#38bdf8', tension: 0.4 },
+                    { label: 'Soft Cloud', data: histBlanqueador, borderColor: '#94a3b8', tension: 0.4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Cerrar Sesión
+    document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+        signOut(auth).then(() => window.location.href = "login.html");
+    });
+</script>
+</body>
+</html>

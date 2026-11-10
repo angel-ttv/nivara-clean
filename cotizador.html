@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador Inteligente | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-white font-sans">
+
+    <nav class="p-6 border-b border-slate-800">
+        <a href="index.html" class="text-blue-400 font-bold hover:text-blue-300 transition"><i class="fas fa-arrow-left mr-2"></i>Volver al Inicio</a>
+    </nav>
+
+    <div class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700">
+            <h1 class="text-3xl font-black mb-2">Generar Cotización Oficial</h1>
+            <p class="text-slate-400 mb-8">Completa el formulario para recibir nuestra propuesta tecnológica.</p>
+
+            <form id="formCotizacion" class="grid md:grid-cols-2 gap-6">
+                
+                <div class="md:col-span-2 grid md:grid-cols-3 gap-4 bg-slate-700/30 p-6 rounded-xl border border-slate-700">
+                    <input type="text" id="nombre" placeholder="Tu Nombre" required class="bg-slate-900 p-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none transition">
+                    <input type="text" id="empresa" placeholder="Nombre del Hotel" required class="bg-slate-900 p-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none transition">
+                    <input type="email" id="email" placeholder="Correo corporativo" required class="bg-slate-900 p-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none transition">
+                </div>
+
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-blue-400 uppercase tracking-wider">Selección de Insumos (Cantidad de Botes)</label>
+                    
+                    <div class="flex items-center justify-between bg-slate-700/50 p-4 rounded-xl border border-blue-500 shadow-inner">
+                        <div>
+                            <span class="font-bold text-white block">Nivara ZeroX</span>
+                            <span class="text-xs text-blue-300">Removedor de Óxido (Bote 4 Litros)</span>
+                        </div>
+                        <input type="number" id="qty-zerox" value="0" min="0" oninput="calcular()" class="w-24 bg-slate-900 border border-blue-500 text-white p-2 rounded-lg text-center font-bold focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl opacity-50 cursor-not-allowed border border-slate-700">
+                        <div>
+                            <span class="font-bold text-slate-500 block">Nivara Power Wash</span>
+                            <span class="text-xs text-slate-600">Detergente Industrial - En Laboratorio</span>
+                        </div>
+                        <input type="number" disabled value="0" class="w-24 bg-slate-900 p-2 rounded-lg text-center cursor-not-allowed text-slate-600">
+                    </div>
+                    
+                    <div class="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl opacity-50 cursor-not-allowed border border-slate-700">
+                        <div>
+                            <span class="font-bold text-slate-500 block">Nivara Soft Cloud</span>
+                            <span class="text-xs text-slate-600">Suavizante IA - Próximamente</span>
+                        </div>
+                        <input type="number" disabled value="0" class="w-24 bg-slate-900 p-2 rounded-lg text-center cursor-not-allowed text-slate-600">
+                    </div>
+                </div>
+
+                <div class="bg-blue-600 p-8 rounded-2xl text-center flex flex-col justify-center relative overflow-hidden shadow-lg border border-blue-500">
+                    <div class="relative z-10">
+                        <p class="text-xs uppercase font-bold text-blue-200">Total Estimado</p>
+                        <div class="text-4xl font-black my-2">$<span id="total">0.00</span></div>
+                        <p class="text-[10px] text-blue-200 mt-1 mb-6">* Precio por bote de 4L: $800.00 MXN</p>
+                        
+                        <div class="flex flex-col gap-3">
+                            <button type="button" id="btnComprar" class="w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-slate-100 transition shadow-md">
+                                🛒 Confirmar Pedido de Compra
+                            </button>
+                            <button type="button" id="btnCotizar" class="w-full bg-blue-700 text-blue-100 border border-blue-400 font-bold py-3 rounded-xl hover:bg-blue-800 transition">
+                                📄 Solo Descargar Cotización
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDez4Am3muTt-5xlJdU_BfaY__GJycJlAY",
+            authDomain: "nivara-clean.firebaseapp.com",
+            projectId: "nivara-clean",
+            storageBucket: "nivara-clean.firebasestorage.app",
+            messagingSenderId: "600289319525",
+            appId: "1:600289319525:web:35433c4a6afa99cd02048c",
+            measurementId: "G-G04B86MD34"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const PRECIOS = { zerox: 800.0 }; 
+
+        // Cálculo automático en pantalla
+        window.calcular = function() {
+            const total = document.getElementById('qty-zerox').value * PRECIOS.zerox;
+            document.getElementById('total').innerText = total.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        // Evitar que el formulario se envíe con "Enter" y rompa el proceso
+        document.getElementById('formCotizacion').addEventListener('submit', (e) => {
+            e.preventDefault();
+        });
+
+        // Asignar funciones a cada botón
+        document.getElementById('btnComprar').addEventListener('click', () => procesarAccion('Pendiente'));
+        document.getElementById('btnCotizar').addEventListener('click', () => procesarAccion('Cotización'));
+
+        async function procesarAccion(tipoDeAccion) {
+            
+            // Validar que llenen los campos
+            const nombre = document.getElementById('nombre').value;
+            const empresa = document.getElementById('empresa').value;
+            const email = document.getElementById('email').value;
+            const qty = document.getElementById('qty-zerox').value;
+
+            if(!nombre || !empresa || !email) {
+                alert("Por favor, llena tus datos de contacto."); 
+                return;
+            }
+            if(qty <= 0) {
+                alert("Ingresa al menos 1 bote para continuar."); 
+                return;
+            }
+
+            // Cambiar botones a estado de carga
+            document.getElementById('btnComprar').innerText = "Procesando...";
+            document.getElementById('btnCotizar').innerText = "Procesando...";
+            document.getElementById('btnComprar').disabled = true;
+            document.getElementById('btnCotizar').disabled = true;
+            
+            const total = document.getElementById('total').innerText;
+            const fechaHoy = new Date().toLocaleDateString('es-MX');
+            
+            // 1. Guardar datos para generar el Ticket
+            localStorage.setItem('nivara_ticket', JSON.stringify({
+                nombre: nombre, 
+                empresa: empresa, 
+                qty: qty, 
+                total: total, 
+                fecha: fechaHoy, 
+                tipo: tipoDeAccion // Le pasamos si fue "Pendiente" (Compra) o "Cotización"
+            }));
+
+            try {
+                // 2. Enviar a Firebase
+                await addDoc(collection(db, "pedidos"), {
+                    nombre: nombre,
+                    empresa: empresa,
+                    email: email.toLowerCase(), 
+                    qty_botes: parseInt(qty),
+                    total: total,
+                    estado: tipoDeAccion, // Aquí se guarda si es Cotización o Pendiente de entrega
+                    fecha: fechaHoy
+                });
+
+                // 3. Redirigir al recibo
+                window.location.href = "ticket.html"; 
+                
+            } catch (error) {
+                console.error("Error al guardar en Firebase:", error);
+                alert("Hubo un problema de conexión. Intenta nuevamente.");
+                // Restaurar botones si falla
+                document.getElementById('btnComprar').innerText = "🛒 Confirmar Pedido de Compra";
+                document.getElementById('btnCotizar').innerText = "📄 Solo Descargar Cotización";
+                document.getElementById('btnComprar').disabled = false;
+                document.getElementById('btnCotizar').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

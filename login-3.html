@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso Clientes | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 flex items-center justify-center h-screen font-sans">
+
+    <div class="bg-slate-800 p-10 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="text-center mb-8">
+            <div class="text-3xl font-black text-white tracking-tighter mb-2">NIVARA <span class="text-blue-500 font-light">CLEAN</span></div>
+            <p class="text-slate-400 text-sm">Portal de Suministro Inteligente</p>
+        </div>
+
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label class="block text-slate-300 text-sm font-bold mb-2">Correo Corporativo</label>
+                <input type="email" id="email" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition" placeholder="gerencia@hotel.com">
+            </div>
+            <div>
+                <label class="block text-slate-300 text-sm font-bold mb-2">Contraseña</label>
+                <input type="password" id="password" required class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition" placeholder="••••••••">
+            </div>
+            
+            <button type="submit" id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                Ingresar al Sistema
+            </button>
+            <p id="errorMsg" class="text-red-500 text-sm text-center hidden mt-4"></p>
+        </form>
+        
+        <div class="mt-6 text-center border-t border-slate-700 pt-6">
+            <p class="text-slate-400 text-sm mb-2">¿Aún no optimizas tus insumos?</p>
+            <a href="registro.html" class="bg-slate-700 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-slate-600 transition inline-block">
+                Quiero ser cliente
+            </a>
+            <br><br>
+            <a href="index.html" class="text-slate-500 text-sm hover:text-white transition">← Volver al inicio</a>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. Importar Firebase desde los enlaces web oficiales (CDN)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
+
+        // 2. Tu configuración real de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDez4Am3muTt-5xlJdU_BfaY__GJycJlAY",
+            authDomain: "nivara-clean.firebaseapp.com",
+            projectId: "nivara-clean",
+            storageBucket: "nivara-clean.firebasestorage.app",
+            messagingSenderId: "600289319525",
+            appId: "1:600289319525:web:35433c4a6afa99cd02048c",
+            measurementId: "G-G04B86MD34"
+        };
+
+        // 3. Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+
+        // 4. Lógica de Inicio de Sesión
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.innerText = "Autenticando...";
+            errorMsg.classList.add('hidden'); // Ocultar errores previos
+
+            // Pedir a Firebase que valide al usuario
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // ¡Éxito! Redirigir al portal
+                    window.location.href = "portal.html";
+                })
+                .catch((error) => {
+                    // Error: Contraseña o correo incorrectos
+                    loginBtn.innerText = "Ingresar al Sistema";
+                    errorMsg.innerText = "Credenciales incorrectas. Verifica tu correo y contraseña.";
+                    errorMsg.classList.remove('hidden');
+                    console.error("Error de Firebase:", error.message);
+                });
+        });
+    </script>
+</body>
+</html>

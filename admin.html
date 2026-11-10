@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Comando | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .loading-shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans h-screen flex flex-col">
+
+    <header class="bg-slate-950 border-b border-slate-800 p-4 flex justify-between items-center px-8 sticky top-0 z-50">
+        <div class="text-xl font-black tracking-tighter text-white uppercase">NIVARA <span class="text-blue-500 font-light">LOGISTICS</span></div>
+        <div class="flex items-center gap-4">
+            <div class="text-xs font-bold text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+                <i class="fas fa-satellite-dish text-green-500 animate-pulse mr-2"></i> Monitoreo en Tiempo Real
+            </div>
+            <button onclick="location.reload()" class="text-slate-400 hover:text-white transition">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 class="text-3xl font-black text-white">Gestión de Entregas</h1>
+                <p class="text-slate-400 text-sm">Validación de pedidos y contacto directo con clientes de la Riviera Maya.</p>
+            </header>
+
+            <div class="bg-slate-800 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-950 text-slate-400 text-[10px] uppercase tracking-[0.2em]">
+                        <tr>
+                            <th class="p-5">Fecha / Folio</th>
+                            <th class="p-5">Cliente y Contacto</th>
+                            <th class="p-5">Destino GPS</th>
+                            <th class="p-5 text-center">Pedido</th>
+                            <th class="p-5 text-right">Total</th>
+                            <th class="p-5 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-pedidos" class="divide-y divide-slate-700/50">
+                        <tr><td colspan="6" class="p-20 text-center"><i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDez4Am3muTt-5xlJdU_BfaY__GJycJlAY",
+            authDomain: "nivara-clean.firebaseapp.com",
+            projectId: "nivara-clean",
+            storageBucket: "nivara-clean.firebasestorage.app",
+            messagingSenderId: "600289319525",
+            appId: "1:600289319525:web:35433c4a6afa99cd02048c",
+            measurementId: "G-G04B86MD34"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const tabla = document.getElementById('tabla-pedidos');
+
+        onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // 1. Verificamos quién es el que intenta entrar
+        const adminDoc = await getDoc(doc(db, "clientes", user.email));
+        
+        if (adminDoc.exists() && adminDoc.data().rol === "admin") {
+            // ✅ Es el jefe, permitimos cargar los pedidos
+            console.log("Acceso de administrador concedido");
+            cargarPedidos();
+        } else {
+            // ❌ Es un cliente o un intruso, lo sacamos
+            alert("Acceso denegado: No tienes permisos de administrador.");
+            window.location.href = "login.html";
+        }
+    } else {
+        // No está ni logueado, al login
+        window.location.href = "login.html";
+    }
+});
+
+        async function cargarPedidos() {
+            tabla.innerHTML = "";
+            const q = query(collection(db, "pedidos"), where("estado", "==", "Pendiente"));
+            const querySnapshot = await getDocs(q);
+            
+            if(querySnapshot.empty) {
+                tabla.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-slate-500 font-medium">No hay entregas pendientes.</td></tr>`;
+                return;
+            }
+
+            for (const documento of querySnapshot.docs) {
+                const p = documento.data();
+                
+                // BUSCAMOS LOS DATOS DEL CLIENTE (Teléfono, Dirección, IP)
+                const clienteSnap = await getDoc(doc(db, "clientes", p.email));
+                let infoExtra = { direccion: "No registrada", referencias: "", giro: "No definido", ciudad: "", telefono: "", lat_ip: "", lng_ip: "" };
+                
+                if(clienteSnap.exists()) {
+                    const c = clienteSnap.data();
+                    infoExtra = {
+                        direccion: c.direccion || "Sin calle",
+                        referencias: c.referencias || "Sin referencias",
+                        giro: c.giro || "General",
+                        ciudad: c.ubicacion || "",
+                        telefono: c.telefono || "",
+                        lat_ip: c.lat_ip || "",
+                        lng_ip: c.lng_ip || ""
+                    };
+                }
+
+                // Generar link de Maps (Prioriza coordenadas de red si existen)
+                const mapsLink = infoExtra.lat_ip 
+                    ? `https://www.google.com/maps?q=${infoExtra.lat_ip},${infoExtra.lng_ip}`
+                    : `https://www.google.com/maps/search/${encodeURIComponent(infoExtra.direccion + ' ' + infoExtra.ciudad)}`;
+
+                // Mensaje de WhatsApp personalizado
+                const msjWA = encodeURIComponent(`Hola ${p.empresa}, somos de Nivara Clean. Recibimos tu pedido de Nivara ZeroX y estamos coordinando tu entrega en ${infoExtra.direccion}. ¿Nos confirmas la recepción?`);
+                const waLink = `https://wa.me/${infoExtra.telefono.replace(/\D/g,'')}?text=${msjWA}`;
+
+                const fila = `
+                    <tr class="hover:bg-slate-800/50 transition duration-300">
+                        <td class="p-5">
+                            <div class="text-xs text-slate-500 font-mono">#${documento.id.substring(0,6).toUpperCase()}</div>
+                            <div class="text-sm font-bold text-slate-300">${p.fecha}</div>
+                        </td>
+                        <td class="p-5">
+                            <div class="font-black text-white text-lg leading-tight">${p.empresa}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded uppercase font-bold">${infoExtra.giro}</span>
+                                <span class="text-xs text-slate-500">${p.nombre}</span>
+                            </div>
+                            <div class="flex gap-2 mt-3">
+                                <a href="tel:${infoExtra.telefono}" class="text-blue-400 hover:text-white text-[10px] font-bold bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20 transition">
+                                    <i class="fas fa-phone-alt mr-1"></i> LLAMAR
+                                </a>
+                                <a href="${waLink}" target="_blank" class="text-green-400 hover:text-white text-[10px] font-bold bg-green-500/10 px-2 py-1 rounded border border-green-500/20 transition">
+                                    <i class="fab fa-whatsapp mr-1"></i> WHATSAPP
+                                </a>
+                            </div>
+                        </td>
+                        <td class="p-5">
+                            <div class="text-sm text-slate-200 font-medium italic">"${infoExtra.direccion}"</div>
+                            <div class="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-wider">REF: ${infoExtra.referencias}</div>
+                            <a href="${mapsLink}" target="_blank" class="inline-block mt-3 text-[10px] text-blue-400 hover:text-white font-bold border border-blue-400/30 px-3 py-1.5 rounded-xl hover:bg-blue-600 transition">
+                                <i class="fas fa-location-arrow mr-1"></i> ABRIR EN GOOGLE MAPS
+                            </a>
+                        </td>
+                        <td class="p-5 text-center">
+                            <div class="text-2xl font-black text-white">${p.qty_botes}</div>
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Botes 4L</div>
+                        </td>
+                        <td class="p-5 text-right font-black text-green-400 text-lg">
+                            $${p.total}
+                        </td>
+                        <td class="p-5 text-center">
+                            <button onclick="entregarPedido('${documento.id}', '${p.email}', ${p.qty_botes})" class="bg-blue-600 hover:bg-white hover:text-blue-900 text-white font-black py-3 px-6 rounded-2xl text-xs transition-all duration-300 shadow-lg shadow-blue-600/20 uppercase tracking-tighter">
+                                Entregar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tabla.innerHTML += fila;
+            }
+        }
+
+        window.entregarPedido = async function(idPedido, emailCliente, qtyBotes) {
+    if(!confirm("¿Confirmar entrega física? Esto actualizará la gráfica de IA del cliente.")) return;
+
+    try {
+        // 1. Marcamos el pedido como entregado
+        await updateDoc(doc(db, "pedidos", idPedido), { 
+            estado: "Entregado",
+            fecha_entrega: new Date().toLocaleDateString() 
+        });
+
+        // 2. Referencia al cliente para actualizar su portal
+        const clienteRef = doc(db, "clientes", emailCliente);
+        const clienteSnap = await getDoc(clienteRef);
+
+        if(clienteSnap.exists()) {
+            const datosCliente = clienteSnap.data();
+            
+            // Obtenemos el historial actual o creamos uno de ceros si no existe
+            let hist = datosCliente.historial_detergente || [0, 0, 0, 0, 0, 0];
+            let consumoTotal = (datosCliente.consumo_actual || 0);
+            
+            // Calculamos los litros (Cada bote es de 4L)
+            const litrosNuevos = qtyBotes * 4;
+
+            // REGLA DE IA: Sumamos al último mes (hist[5]) y recalculamos consumo
+            // Si el historial está vacío [0,0,0,0,0,0], lo convertimos en algo visible
+            hist[5] = (hist[5] || 0) + litrosNuevos;
+            let nuevoConsumoTotal = consumoTotal + litrosNuevos;
+
+            // Calculamos un ahorro simulado para que el cliente se motive (ej. 15%)
+            let ahorroSimulado = (litrosNuevos > 0) ? "15%" : "0%";
+
+            // 3. ACTUALIZACIÓN CRÍTICA EN FIRESTORE
+            await updateDoc(clienteRef, {
+                historial_detergente: hist,
+                consumo_actual: nuevoConsumoTotal,
+                ahorro: ahorroSimulado,
+                estado_ia: "MOTOR ACTIVO", // Cambiamos de "CALIBRANDO" a "ACTIVO"
+                ultima_entrega: new Date().toLocaleDateString()
+            });
+
+            alert(`✅ ¡Éxito! Se entregaron ${litrosNuevos}L a ${datosCliente.nombre_hotel}. El portal del cliente ya está actualizado.`);
+        }
+        
+        // Recargar la tabla de pedidos pendientes
+        cargarPedidos();
+
+    } catch (e) { 
+        console.error("Error en entrega:", e);
+        alert("Error al procesar entrega: " + e.message); 
+    }
+}
+    </script>
+</body>
+</html>

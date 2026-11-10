@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket de Orden | Nivara Clean</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Ocultar botones al momento de imprimir */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; }
+            .shadow-2xl { box-shadow: none !important; border: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans flex items-center justify-center min-h-screen py-10">
+
+    <div class="w-full max-w-lg">
+        <div class="bg-white p-8 rounded-t-3xl shadow-2xl relative border-t-8 border-blue-600">
+            
+            <div class="text-center mb-8 border-b-2 border-dashed border-slate-200 pb-6">
+                <div class="text-3xl font-black text-slate-900 tracking-tighter mb-1">NIVARA <span class="text-blue-600 font-light">CLEAN</span></div>
+                <p class="text-xs text-slate-500 uppercase tracking-widest">División Industrial</p>
+                
+                <div id="badge-tipo" class="mt-4 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full inline-block transition-colors">
+                    <i class="fas fa-circle-notch fa-spin mr-1"></i> Cargando...
+                </div>
+            </div>
+
+            <div class="mb-6 text-sm text-slate-600 space-y-2">
+                <p><span class="font-bold text-slate-800">Folio:</span> #<span id="tkt-folio">NV-0000</span></p>
+                <p><span class="font-bold text-slate-800">Fecha:</span> <span id="tkt-fecha">--/--/----</span></p>
+                <p><span class="font-bold text-slate-800">Cliente:</span> <span id="tkt-nombre">Cargando...</span></p>
+                <p><span class="font-bold text-slate-800">Hotel/Empresa:</span> <span id="tkt-empresa">Cargando...</span></p>
+            </div>
+
+            <div class="border-t-2 border-b-2 border-slate-100 py-4 mb-6">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-slate-400 border-b border-slate-100">
+                            <th class="pb-2 font-medium">Concepto</th>
+                            <th class="pb-2 font-medium text-center">Cant.</th>
+                            <th class="pb-2 font-medium text-right">Importe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-3 font-bold text-slate-800">Nivara ZeroX<br><span class="text-xs text-slate-500 font-normal">Removedor Óxido (Bote 4L)</span></td>
+                            <td class="py-3 text-center font-bold text-slate-800" id="tkt-qty">0</td>
+                            <td class="py-3 text-right font-bold text-slate-800">$<span id="tkt-subtotal">0.00</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center text-xl mb-8">
+                <span class="font-black text-slate-800">Total MXN</span>
+                <span class="font-black text-blue-600">$<span id="tkt-total">0.00</span></span>
+            </div>
+
+            <div class="text-center text-xs text-slate-400">
+                <p id="tkt-mensaje">Generando documento oficial...</p>
+                <p class="mt-2 font-bold text-slate-500">¡Gracias por confiar en Nivara Clean!</p>
+            </div>
+        </div>
+        
+        <div class="bg-white h-4 w-full" style="background-image: radial-gradient(circle at 10px 0, transparent 10px, white 11px); background-size: 20px 20px; background-position: -10px 0; background-repeat: repeat-x;"></div>
+
+        <div class="no-print mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <button onclick="window.print()" class="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition shadow-lg flex items-center justify-center">
+                <i class="fas fa-print mr-2"></i> Guardar PDF / Imprimir
+            </button>
+            <a href="index.html" class="bg-white text-slate-800 border border-slate-300 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm text-center">
+                Volver al Inicio
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Leemos los datos que guardó el cotizador en la memoria temporal
+        const ticketData = JSON.parse(localStorage.getItem('nivara_ticket'));
+
+        if (ticketData) {
+            document.getElementById('tkt-folio').innerText = "NV-" + Math.floor(Math.random() * 90000 + 10000); 
+            document.getElementById('tkt-fecha').innerText = ticketData.fecha;
+            document.getElementById('tkt-nombre').innerText = ticketData.nombre;
+            document.getElementById('tkt-empresa').innerText = ticketData.empresa;
+            document.getElementById('tkt-qty').innerText = ticketData.qty;
+            document.getElementById('tkt-subtotal').innerText = ticketData.total;
+            document.getElementById('tkt-total').innerText = ticketData.total;
+
+            // MAGIA: Cambiar el diseño y textos dependiendo de si es Cotización o Compra
+            if(ticketData.tipo === "Cotización") {
+                document.getElementById('badge-tipo').className = "mt-4 bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full inline-block border border-slate-200";
+                document.getElementById('badge-tipo').innerHTML = '<i class="fas fa-file-alt mr-1"></i> Cotización Oficial';
+                document.getElementById('tkt-mensaje').innerText = "Este documento es una cotización informativa y los precios están sujetos a cambios. No representa un compromiso de compra.";
+            } else {
+                document.getElementById('badge-tipo').className = "mt-4 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full inline-block border border-green-200";
+                document.getElementById('badge-tipo').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Orden de Compra Recibida';
+                document.getElementById('tkt-mensaje').innerText = "En breve un asesor de logística se comunicará para confirmar la entrega en la Riviera Maya.";
+            }
+        } else {
+            // Si entra directo sin pasar por el cotizador, lo regresamos
+            window.location.href = "cotizador.html";
+        }
+    </script>
+</body>
+</html>
